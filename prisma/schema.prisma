@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Installation {
+  id             Int          @id @default(autoincrement())
+  nom            String
+  client         String
+  boutique       String
+  dateCreation   DateTime     @default(now()) // Date de création
+  dateMiseAJour  DateTime     @updatedAt       // Date mise à jour automatique
+  numeroFacture  String?
+  dateFacture    DateTime?
+  organisation   String
+  status         InstallationStatus @default(ACTIVE) // Statut de l'installation
+  materiels      Materiel[]   @relation("InstallationMateriels")
+  remplacements  Remplacement[]
+
+  createdAt      DateTime     @default(now()) // Date de création
+  updatedAt      DateTime     @updatedAt      // Date de mise à jour automatique
+}
+
+model Materiel {
+  id                      String        @id @default(cuid())
+  marque                  String
+  modele                  String
+  numeroSerie             String
+  typeMateriel            String
+  dateInstallation        DateTime
+  installationId          Int
+  installation            Installation  @relation("InstallationMateriels", fields: [installationId], references: [id])
+  remplacementsPrecedents Remplacement[] @relation("AncienMateriel")
+  remplacementsSuivants   Remplacement[] @relation("NouveauMateriel")
+
+  createdAt               DateTime     @default(now()) // Date de création
+  updatedAt               DateTime     @updatedAt       // Date de mise à jour automatique
+}
+
+model Remplacement {
+  id                String     @id @default(cuid())
+  dateRemplacement  DateTime
+  ancienMaterielId  String
+  nouveauMaterielId String
+  installationId    Int
+  installation      Installation @relation(fields: [installationId], references: [id])
+  ancienMateriel    Materiel    @relation("AncienMateriel", fields: [ancienMaterielId], references: [id])
+  nouveauMateriel   Materiel    @relation("NouveauMateriel", fields: [nouveauMaterielId], references: [id])
+
+  createdAt         DateTime   @default(now()) // Date de création
+  updatedAt         DateTime   @updatedAt       // Date de mise à jour automatique
+}
+
+enum InstallationStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  COMPLETED
+}
